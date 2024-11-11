@@ -1,0 +1,2 @@
+microservices:
+  basic-data: "basic-data:8000"
