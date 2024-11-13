@@ -1,2 +1,5 @@
 microservices:
   basic-data: "basic-data:8000"
+logger:
+  loglevel: "DEBUG"
+  logfile: ""

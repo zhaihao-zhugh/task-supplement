@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
+
+	logger "gpk/logger"
 
 	"github.com/spf13/viper"
 )
@@ -19,10 +20,14 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("read config success")
-	fmt.Println(viper.AllSettings())
+
+	var cfg logger.LogConfig
+	viper.UnmarshalKey("logger", &cfg)
+	logger.Init(&cfg)
+	logger.Info("read config success")
+	logger.Info(viper.AllSettings())
 }
 
 func main() {
-	fmt.Println(viper.GetString("microservices.basic-data"))
+
 }
