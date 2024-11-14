@@ -4,9 +4,9 @@ import (
 	"flag"
 	"gpk/logger"
 	"log"
-	_ "supplementary-inspection/data"
 	"supplementary-inspection/pool"
 	"supplementary-inspection/route"
+	"supplementary-inspection/service"
 
 	"github.com/spf13/viper"
 )
@@ -34,6 +34,9 @@ func init() {
 }
 
 func main() {
+	if dat := service.AnalyzeDatFile("test.dat"); dat != nil {
+		dat.MakeFile()
+	}
 	go pool.Run()
 	route.RunHttpServer(*serverPort)
 }

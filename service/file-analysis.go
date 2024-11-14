@@ -178,3 +178,142 @@ func saveBytesToFile(bytes []byte, filePath string) {
 		return
 	}
 }
+
+func AnalyzeDatFile(filePath string) *GaoDeDat {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	dat := new(GaoDeDat)
+	binary.Read(file, binary.LittleEndian, &dat.length)             // 文件长度
+	binary.Read(file, binary.LittleEndian, &dat.version)            // 规范版本号
+	binary.Read(file, binary.LittleEndian, &dat.createTime)         // 文件生成时间
+	binary.Read(file, binary.LittleEndian, &dat.stationName)        // 站点名称
+	binary.Read(file, binary.LittleEndian, &dat.stationCode)        // 站点编码
+	binary.Read(file, binary.LittleEndian, &dat.weather)            // 天气
+	binary.Read(file, binary.LittleEndian, &dat.temperature)        // 温度
+	binary.Read(file, binary.LittleEndian, &dat.humidity)           // 湿度
+	binary.Read(file, binary.LittleEndian, &dat.deviceManufacturer) // 仪器厂家
+	binary.Read(file, binary.LittleEndian, &dat.deviceModel)        // 仪器型号
+	binary.Read(file, binary.LittleEndian, &dat.deviceVersion)      // 仪器版本号
+	binary.Read(file, binary.LittleEndian, &dat.deviceSerialNum)    // 仪器序列号
+	binary.Read(file, binary.LittleEndian, &dat.frequency)          // 系统频率
+	binary.Read(file, binary.LittleEndian, &dat.fileCount)          // 图谱数量
+	binary.Read(file, binary.LittleEndian, &dat.longitude)          // 经度
+	binary.Read(file, binary.LittleEndian, &dat.latitude)           // 纬度
+	binary.Read(file, binary.LittleEndian, &dat.altitude)           // 海拔
+	binary.Read(file, binary.LittleEndian, &dat.skip)               // 预留
+
+	for i := 0; i < int(dat.fileCount); i++ {
+		f := new(GaoDeFile)
+		binary.Read(file, binary.LittleEndian, &f.datType)
+		binary.Read(file, binary.LittleEndian, &f.datLength)
+		binary.Read(file, binary.LittleEndian, &f.datCreateTime)
+		binary.Read(file, binary.LittleEndian, &f.datNature)
+		binary.Read(file, binary.LittleEndian, &f.targetName)
+		binary.Read(file, binary.LittleEndian, &f.targetCode)
+		binary.Read(file, binary.LittleEndian, &f.pointName)
+		binary.Read(file, binary.LittleEndian, &f.pointCode)
+		binary.Read(file, binary.LittleEndian, &f.channel)
+		binary.Read(file, binary.LittleEndian, &f.saveDataType)
+		binary.Read(file, binary.LittleEndian, &f.temperatureUnit)
+		binary.Read(file, binary.LittleEndian, &f.temperatureWidth)
+		binary.Read(file, binary.LittleEndian, &f.temperatureHeight)
+		binary.Read(file, binary.LittleEndian, &f.picSize)
+		binary.Read(file, binary.LittleEndian, &f.ifrSize)
+		binary.Read(file, binary.LittleEndian, &f.emissivity)
+		binary.Read(file, binary.LittleEndian, &f.distance)
+		binary.Read(file, binary.LittleEndian, &f.envTemperature)
+		binary.Read(file, binary.LittleEndian, &f.envHumidity)
+		binary.Read(file, binary.LittleEndian, &f.refTemperature)
+		binary.Read(file, binary.LittleEndian, &f.upperLimit)
+		binary.Read(file, binary.LittleEndian, &f.lowerLimit)
+		binary.Read(file, binary.LittleEndian, &f.datSkip)
+
+		switch f.saveDataType {
+		case 0x02:
+			var datData = make([]byte, f.temperatureWidth*f.temperatureHeight) // 红外图谱数据
+			binary.Read(file, binary.LittleEndian, &datData)
+		default:
+			var datData = make([]byte, 4*f.temperatureWidth*f.temperatureHeight) // 红外图谱数据
+			binary.Read(file, binary.LittleEndian, &datData)
+		}
+
+		f.PicData = make([]byte, f.picSize)
+		f.IfrData = make([]byte, f.ifrSize)
+
+		binary.Read(file, binary.LittleEndian, &f.PicData)
+		binary.Read(file, binary.LittleEndian, &f.IfrData)
+
+		dat.files = append(dat.files, f)
+	}
+
+	return dat
+}
+
+type GaoDeDat struct {
+	length             uint32
+	version            [4]byte
+	createTime         uint64
+	stationName        [118]byte
+	stationCode        [42]byte
+	weather            uint8
+	temperature        float32
+	humidity           uint8
+	deviceManufacturer [32]byte
+	deviceModel        [32]byte
+	deviceVersion      [4]byte
+	deviceSerialNum    [32]byte
+	frequency          float32
+	fileCount          uint16
+	longitude          float64
+	latitude           float64
+	altitude           int32
+	skip               [204]byte
+	files              []*GaoDeFile
+}
+
+func (g *GaoDeDat) MakeFile() {
+	for i, f := range g.files {
+		f.MakePicFile(i)
+		f.MakeIfrFile(i)
+	}
+}
+
+type GaoDeFile struct {
+	datType           uint8     // 检测数据类型
+	datLength         uint32    // 图谱数据长度
+	datCreateTime     uint64    // 图谱生成时间
+	datNature         uint8     // 图谱性质
+	targetName        [118]byte // 被测设备名称
+	targetCode        [42]byte  // 被测设备编码
+	pointName         [128]byte // 测点名称
+	pointCode         [32]byte  // 测点编码
+	channel           int16     // 检测通道标志
+	saveDataType      uint8     // 存储数据类型
+	temperatureUnit   uint8     // 温度单位
+	temperatureWidth  int32     // 温度点阵宽度
+	temperatureHeight int32     // 温度点阵高度
+	picSize           uint32    // 可见光照片数据长度
+	ifrSize           uint32    // 红外照片数据长度
+	emissivity        float32   // 发射率
+	distance          float32   // 测试距离
+	envTemperature    float32   // 大气温度
+	envHumidity       uint8     // 相对湿度
+	refTemperature    float32   // 反射温度
+	upperLimit        float32   // 温宽上限
+	lowerLimit        float32   // 温宽下限
+	datSkip           [133]byte // 预留
+	PicData           []byte
+	IfrData           []byte
+}
+
+func (f *GaoDeFile) MakePicFile(index int) {
+	saveBytesToFile(f.PicData, fmt.Sprintf("pic_%d.jpg", index))
+}
+
+func (f *GaoDeFile) MakeIfrFile(index int) {
+	saveBytesToFile(f.IfrData, fmt.Sprintf("ifr_%d.jpg", index))
+}

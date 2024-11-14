@@ -78,17 +78,27 @@ func UploadTaskResult(ctx *gin.Context) {
 		return
 	}
 
-	// for _, subTask := range request.Data.MainTask.SubTask {
-	// 	for _, clearance := range subTask.Clearance {
-	// 		for _, point := range clearance.TestPoint {
+	for _, subTask := range request.Data.MainTask.SubTask {
+		for _, clearance := range subTask.Clearance {
+			for _, point := range clearance.TestPoint {
+				if p := dbdata.PatrolPointMap.GetPatrolPoint(point.Id); p != nil {
+					item := model.AnalysisItem{
+						ObjectID:   point.Id,
+						ObjectName: point.Name,
+					}
+					if p.FilePath != "" {
+						if file, err := os.ReadFile(p.FilePath); err == nil {
+							item.TemplateFrame = service.CovertPicToBase64(file)
+						} else {
+							logger.Error(err)
+						}
+					}
+					if 
+				}
 
-	// 			item := model.AnalysisItem{
-	// 				ObjectID:   point.Id,
-	// 				ObjectName: point.Name,
-	// 			}
-	// 		}
-	// 	}
-	// }
+			}
+		}
+	}
 
 	ctx.JSON(http.StatusOK, request)
 }
