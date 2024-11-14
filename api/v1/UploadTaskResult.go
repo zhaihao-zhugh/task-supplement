@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"gpk/logger"
 	"net/http"
-	"supplementary-inspection/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -79,17 +78,17 @@ func UploadTaskResult(ctx *gin.Context) {
 		return
 	}
 
-	for _, subTask := range request.Data.MainTask.SubTask {
-		for _, clearance := range subTask.Clearance {
-			for _, point := range clearance.TestPoint {
+	// for _, subTask := range request.Data.MainTask.SubTask {
+	// 	for _, clearance := range subTask.Clearance {
+	// 		for _, point := range clearance.TestPoint {
 
-				item := model.AnalysisItem{
-					ObjectID:   point.Id,
-					ObjectName: point.Name,
-				}
-			}
-		}
-	}
+	// 			item := model.AnalysisItem{
+	// 				ObjectID:   point.Id,
+	// 				ObjectName: point.Name,
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	ctx.JSON(http.StatusOK, request)
 }

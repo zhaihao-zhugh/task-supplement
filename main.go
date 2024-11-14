@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
+	"gpk/logger"
 	"log"
+	_ "supplementary-inspection/data"
 	"supplementary-inspection/pool"
 	"supplementary-inspection/route"
-
-	"gpk/logger"
 
 	"github.com/spf13/viper"
 )

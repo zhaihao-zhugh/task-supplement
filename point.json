@@ -1,0 +1,26 @@
+{
+    "data":[
+        {
+            "id": 1,
+            "guid": "0fcd4f0ebf2a432c83c1ee8cff4ec594",
+            "name": "模拟点位1",
+            "material_id": "",
+            "phase": "1,2,3",
+            "analysis_type": 1,
+            "analysis_list": "sly_bjbmyw",
+            "config": "",
+            "file_path": ""
+        },
+        {
+            "id": 2,
+            "guid": "c50a7ee0125a11efa7bc0242ac140065",
+            "name": "模拟点位2",
+            "material_id": "",
+            "phase": "1,2,3",
+            "analysis_type": 1,
+            "analysis_list": "sly_bjbmyw",
+            "config": "",
+            "file_path": ""
+        }
+    ]
+}

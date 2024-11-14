@@ -1,9 +1,22 @@
 package data
 
-import "sync"
+import (
+	"encoding/json"
+	"fmt"
+	"gpk/logger"
+	"os"
+	"sync"
+
+	"github.com/tidwall/gjson"
+)
 
 var PatrolPointMap = PointProvider{
 	PatrolPointMap: make(map[string]*PatrolPoint),
+}
+
+func init() {
+	PatrolPointMap.GetData()
+	fmt.Printf("PatrolPointMap: %+v\n", PatrolPointMap.PatrolPointMap)
 }
 
 type PointProvider struct {
@@ -55,6 +68,15 @@ func (p *PointProvider) GetPatrolPointMap() map[string]*PatrolPoint {
 	return p.PatrolPointMap
 }
 
-func (p *PointProvider) GetData() map[string]*PatrolPoint {
-
+func (p *PointProvider) GetData() {
+	file, err := os.ReadFile("./point.json")
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	for _, v := range gjson.GetBytes(file, "data").Array() {
+		var point PatrolPoint
+		json.Unmarshal([]byte(v.String()), &point)
+		p.SetPatrolPoint(point.Guid, &point)
+	}
 }
