@@ -1,12 +1,25 @@
 package api
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"gpk/logger"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"supplementary-inspection/dbdata"
+	"supplementary-inspection/model"
+	"supplementary-inspection/pool"
+	"supplementary-inspection/service"
 
 	"github.com/gin-gonic/gin"
 )
+
+type File interface {
+	io.Reader
+}
 
 type UploadTaskResultRequest struct {
 	Code int    `json:"code"`
@@ -53,11 +66,35 @@ func UploadTaskResult(ctx *gin.Context) {
 	}
 
 	// 获取文件
-	files := form.File["files"]
-	for _, file := range files {
-		// 处理文件，例如保存到指定位置
-		logger.Infof("接收到文件:%+v\n", file)
-		err := ctx.SaveUploadedFile(file, "/store/ftp/tmp/"+file.Filename)
+	file := form.File["files"][0]
+	dirPath := "/store/ftp/tmp/" + strings.Split(file.Filename, ".")[0]
+	filePath := dirPath + "/" + file.Filename
+	err = ctx.SaveUploadedFile(file, filePath)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	zr, err := zip.OpenReader(filePath)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer zr.Close()
+	for _, f := range zr.File {
+		logger.Infof("解压到文件:%+v\n", f)
+		// 直接读文件的内容
+		reader, err := f.Open()
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer reader.Close()
+		// dat := service.AnalyzeDatFile(reader)
+		// dat.MakeFile("/store/ftp/tmp", strings.Split(f.Name, ".")[0])
+
+		// 保存文件
+		err = SaveFile(reader, dirPath+"/"+f.Name)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -85,6 +122,10 @@ func UploadTaskResult(ctx *gin.Context) {
 					item := model.AnalysisItem{
 						ObjectID:   point.Id,
 						ObjectName: point.Name,
+						Point:      p,
+					}
+					if p.AnalysisList != "" {
+						item.TypeList = strings.Split(p.AnalysisList, ",")
 					}
 					if p.FilePath != "" {
 						if file, err := os.ReadFile(p.FilePath); err == nil {
@@ -93,7 +134,21 @@ func UploadTaskResult(ctx *gin.Context) {
 							logger.Error(err)
 						}
 					}
-					if 
+
+					if point.FileName != "" {
+						if dat := service.AnalyzeDatFileByFilepath(dirPath + "/" + point.FileName); dat != nil {
+							item.RealFrame = service.CovertPicToBase64(dat.GetPicData(0))
+							if item.TemplateFrame == "" {
+								item.TemplateFrame = item.RealFrame
+							}
+							err := WriteStringToFile(item.RealFrame, dirPath+"/"+point.Name+"_base64.txt")
+							if err != nil {
+								logger.Error(err)
+							}
+						}
+					}
+					pool.PAnalysisRunner.Append(item)
+					logger.Infof("添加分析任务:%s\n", item.ObjectName)
 				}
 
 			}
@@ -101,4 +156,32 @@ func UploadTaskResult(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, request)
+}
+
+func SaveFile(file File, dst string) error {
+	if err := os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
+		return err
+	}
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, file)
+	return err
+}
+
+func WriteStringToFile(str_data string, dst string) error {
+	f, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(str_data)
+	if err != nil {
+		return err
+	}
+	return nil
 }

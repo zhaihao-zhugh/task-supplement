@@ -82,13 +82,14 @@ type Rectangle struct {
 
 // ResultObject 分析主机返回结果对象-国网规范
 type ResultObject struct {
-	Type        string      `json:"type"`        // 分析类型
-	Value       string      `json:"Value"`       // 值
-	Code        string      `json:"code"`        // 2000=正确 2001=图像数据错误 2002=算法分析失败
-	ResImageUrl string      `json:"resImageUrl"` // 结果反馈图像url路径
-	Conf        float32     `json:"conf"`        // 分析结果置信度 范围0-1保留4位小数
-	Desc        string      `json:"desc"`        // 分析结果描述
-	Pos         []Rectangle `json:"pos"`
+	Type           string      `json:"type"`           // 分析类型
+	Value          string      `json:"Value"`          // 值
+	Code           string      `json:"code"`           // 2000=正确 2001=图像数据错误 2002=算法分析失败
+	ResImageUrl    string      `json:"resImageUrl"`    // 结果反馈图像url路径
+	ResImageBase64 string      `json:"resImageBase64"` // base64图片
+	Conf           float32     `json:"conf"`           // 分析结果置信度 范围0-1保留4位小数
+	Desc           string      `json:"desc"`           // 分析结果描述
+	Pos            []Rectangle `json:"pos"`
 }
 
 // ResultObjects 分析主机返回结果对象-国网规范
@@ -99,8 +100,8 @@ type ResultObjects struct {
 
 // AnalysisResult 分析主机返回结果-国网规范
 type AnalysisResult struct {
-	RequestID   string          `json:"requestId"`   // 请求分析数据唯一标识
-	ResultsList []ResultObjects `json:"resultsList"` // 结果集
+	RequestID   string         `json:"requestId"`   // 请求分析数据唯一标识
+	ResultsList []ResultObject `json:"resultsList"` // 结果集
 }
 
 // CommonMessage 系统消息结构体
