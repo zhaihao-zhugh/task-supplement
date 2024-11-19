@@ -3,6 +3,7 @@ package api
 import (
 	"archive/zip"
 	"encoding/json"
+	"fmt"
 	"gpk/logger"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"supplementary-inspection/model"
 	"supplementary-inspection/pool"
 	"supplementary-inspection/service"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -107,7 +109,7 @@ func UploadTaskResult(ctx *gin.Context) {
 	var request UploadTaskResultRequest
 	err = json.Unmarshal([]byte(data), &request)
 	if err != nil {
-		logger.Errorf("%+v", err.Error())
+		logger.Error(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"code": http.StatusBadRequest,
 			"msg":  err.Error(),
@@ -148,11 +150,53 @@ func UploadTaskResult(ctx *gin.Context) {
 						}
 					}
 					pool.PAnalysisRunner.Append(item)
-					logger.Infof("添加分析任务:%s\n", item.ObjectName)
 				}
-
 			}
 		}
+	}
+
+	// 等待请求结果
+	select {
+	// 分析过程超时
+	case <-time.After(time.Second * time.Duration(pool.AnalyzeTimeout)):
+		// for _, item := range items {
+		// 	item.CallbackFunc.(func(*model.ResultObjects, *model.AnalysisItem, string))(nil, &item, "分析过程超时")
+		// 	logger.Errorf("###分析过程超时:%s", item.Point.Name)
+		// }
+		logger.Errorf("请求识别唯一标识为%s的图像分析过程超时", pool.worker.RequestID)
+		res <- fmt.Errorf("分析主机 图像分析超时")
+		return
+	// 处理分析结果
+	case result := <-worker.Wc:
+		logger.Infof("正在处理分析结果:%s", worker.RequestID)
+		for _, item := range items {
+			// exist := false
+			for _, object := range result.ResultsList {
+
+				// if object.ObjectID == item.ObjectID {
+				// 	exist = true
+				// 	// item.CallbackFunc.(func(*model.ResultObjects, *model.AnalysisItem, string))(&object, &item, "")
+				// }
+
+				if object.ResImageBase64 != "" {
+					pic_data, err := service.CovertBase64ToPic(object.ResImageBase64)
+					if err != nil {
+						logger.Errorf("base64图片解析错误:%s", err.Error())
+					} else {
+						logger.Info("保存识别图片")
+						service.SaveBytesToFile(pic_data, "./"+item.Point.Name+"_det.jpg")
+					}
+				}
+			}
+			// if !exist {
+			// 	// item.CallbackFunc.(func(*model.ResultObjects, *model.AnalysisItem, string))(nil, &item, "分析主机漏检")
+			// 	logger.Errorf("###分析主机漏检:%s", item.Point.Name)
+			// }
+		}
+
+		res <- nil
+		logger.Info("分析结果处理完成")
+		return
 	}
 
 	ctx.JSON(http.StatusOK, request)
