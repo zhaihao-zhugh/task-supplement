@@ -1,10 +1,8 @@
 package pool
 
 import (
-	"gpk/logger"
 	"supplementary-inspection/model"
 	"sync"
-	"time"
 )
 
 var PAnalysisRunner *AnalysisRunner
@@ -14,7 +12,7 @@ func Run() {
 		Items: make([]model.AnalysisItem, 0),
 		ch:    make(chan struct{}, 1),
 	}
-	PAnalysisRunner.Run()
+	// PAnalysisRunner.Run()
 }
 
 // AnalysisRunner 分析执行者
@@ -40,45 +38,45 @@ func (runner *AnalysisRunner) Append(item model.AnalysisItem) {
 	runner.Items = append(runner.Items, item)
 }
 
-func (runner *AnalysisRunner) Run() {
-	for {
-		repeat := make(map[string]uint)
-		length := 0
+// func (runner *AnalysisRunner) Run() {
+// 	for {
+// 		repeat := make(map[string]uint)
+// 		length := 0
 
-		for _, item := range runner.Items {
-			// 限制最大请求数量
-			// if i >= Settings.Default.RequestLength {
-			// 	break
-			// }
+// 		for _, item := range runner.Items {
+// 			// 限制最大请求数量
+// 			// if i >= Settings.Default.RequestLength {
+// 			// 	break
+// 			// }
 
-			_, ok := repeat[item.ObjectID]
+// 			_, ok := repeat[item.ObjectID]
 
-			// 待发送请求总长度
-			if ok {
-				break
-			} else {
-				repeat[item.ObjectID] = 0
-			}
+// 			// 待发送请求总长度
+// 			if ok {
+// 				break
+// 			} else {
+// 				repeat[item.ObjectID] = 0
+// 			}
 
-			length += 1
-		}
+// 			length += 1
+// 		}
 
-		if length > 0 {
-			items := runner.Items[0:length]
-			worker := NewAnalysisWorker()
-			runner.Workers.Store(worker.RequestID, worker)
-			runner.ch <- struct{}{}
-			logger.Infof("===>%s", worker.RequestID)
-			go func() {
-				_ = worker.Work(runner.ch, items)
-				runner.Workers.Delete(worker.RequestID)
-			}()
+// 		if length > 0 {
+// 			items := runner.Items[0:length]
+// 			worker := NewAnalysisWorker()
+// 			runner.Workers.Store(worker.RequestID, worker)
+// 			runner.ch <- struct{}{}
+// 			logger.Infof("===>%s", worker.RequestID)
+// 			go func() {
+// 				_ = worker.Work(runner.ch, items)
+// 				runner.Workers.Delete(worker.RequestID)
+// 			}()
 
-			runner.Lock()
-			runner.Items = runner.Items[length:]
-			runner.Unlock()
-		}
+// 			runner.Lock()
+// 			runner.Items = runner.Items[length:]
+// 			runner.Unlock()
+// 		}
 
-		time.Sleep(time.Second)
-	}
-}
+// 		time.Sleep(time.Second)
+// 	}
+// }

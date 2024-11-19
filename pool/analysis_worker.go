@@ -28,11 +28,7 @@ func NewAnalysisWorker() *AnalysisWorker {
 }
 
 // Work 发送分析请求
-func (worker *AnalysisWorker) Work(ch chan struct{}, items []model.AnalysisItem) error {
-	defer func() {
-		<-ch
-	}()
-
+func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
 	logger.Infof("开始等待分析主机返回分析结果,超过%d秒后算超时", AnalyzeTimeout)
 
 	res := make(chan error)

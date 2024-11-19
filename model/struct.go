@@ -45,6 +45,15 @@ type PatrolPoint struct {
 	LatestValue     string  `json:"latest_value"`     // 最新结果值
 }
 
+// 高德红外测试点位
+type TestPoint struct {
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	Sn       string `json:"sn"`
+	FileName string `json:"filename"`
+	Result   int    `json:"result"`
+}
+
 // AnalysisItem 向分析主机发送的待分析对象-国网规范
 type AnalysisItem struct {
 	ObjectID           string          `json:"objectId"`           // 分析请求-分析点位标识
@@ -62,6 +71,7 @@ type AnalysisItem struct {
 	Bbox               string          `json:"bbox"`
 	TemplateFrame      string          `json:"templateFrame"`
 	RealFrame          string          `json:"realFrame"`
+	LinkPoint          *TestPoint      `json:"-"`
 }
 
 // AnalysisRequest 向分析主机发送的分析请求-国网规范
@@ -100,8 +110,8 @@ type ResultObjects struct {
 
 // AnalysisResult 分析主机返回结果-国网规范
 type AnalysisResult struct {
-	RequestID   string         `json:"requestId"`   // 请求分析数据唯一标识
-	ResultsList []ResultObject `json:"resultsList"` // 结果集
+	RequestID   string          `json:"requestId"`   // 请求分析数据唯一标识
+	ResultsList []ResultObjects `json:"resultsList"` // 结果集
 }
 
 // CommonMessage 系统消息结构体
