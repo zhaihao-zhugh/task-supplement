@@ -31,7 +31,7 @@ func NewAnalysisWorker() *AnalysisWorker {
 func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
 	logger.Infof("开始等待分析主机返回分析结果,超过%d秒后算超时", AnalyzeTimeout)
 
-	res := make(chan error)
+	// res := make(chan error)
 
 	// go func() {
 	// 	select {
@@ -119,5 +119,5 @@ func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
 		return fmt.Errorf("图像分析错误")
 	}
 
-	return <-res
+	return nil
 }

@@ -93,7 +93,7 @@ type Rectangle struct {
 // ResultObject 分析主机返回结果对象-国网规范
 type ResultObject struct {
 	Type           string      `json:"type"`           // 分析类型
-	Value          string      `json:"Value"`          // 值
+	Value          string      `json:"value"`          // 值
 	Code           string      `json:"code"`           // 2000=正确 2001=图像数据错误 2002=算法分析失败
 	ResImageUrl    string      `json:"resImageUrl"`    // 结果反馈图像url路径
 	ResImageBase64 string      `json:"resImageBase64"` // base64图片

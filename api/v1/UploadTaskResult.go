@@ -141,12 +141,14 @@ func UploadTaskResult(ctx *gin.Context) {
 							if item.TemplateFrame == "" {
 								item.TemplateFrame = item.RealFrame
 							}
+							dat.MakeFile(dirPath, point.Name)
 							// err := WriteStringToFile(item.RealFrame, dirPath+"/"+point.Name+"_base64.txt")
 							// if err != nil {
 							// 	logger.Error(err)
 							// }
 						}
 					}
+					items = append(items, item)
 				}
 			}
 		}
@@ -158,38 +160,49 @@ func UploadTaskResult(ctx *gin.Context) {
 	worker.Work(items)
 
 	// 等待请求结果
-	select {
-	// 分析过程超时
-	case <-time.After(time.Second * time.Duration(pool.AnalyzeTimeout)):
-		logger.Errorf("请求识别唯一标识为%s的图像分析过程超时", worker.RequestID)
-	// 处理分析结果
-	case result := <-worker.Wc:
-		logger.Infof("正在处理分析结果:%s", worker.RequestID)
-		for _, item := range items {
-			for _, object := range result.ResultsList {
-				if item.LinkPoint.Id == object.ObjectID {
-					for _, r := range object.Results {
-						switch r.Value {
-						case "0":
-							item.LinkPoint.Result = 1
-						case "-1":
-							item.LinkPoint.Result = 2
-						}
-						if r.ResImageBase64 != "" {
-							pic_data, err := service.CovertBase64ToPic(r.ResImageBase64)
-							if err != nil {
-								logger.Errorf("base64图片解析错误:%s", err.Error())
-							} else {
-								logger.Info("保存识别图片")
-								service.SaveBytesToFile(pic_data, "./"+item.Point.Name+"_det.jpg")
+	exit := false
+	for {
+		select {
+		// 分析过程超时
+		case <-time.After(time.Second * time.Duration(pool.AnalyzeTimeout)):
+			logger.Errorf("请求识别唯一标识为%s的图像分析过程超时", worker.RequestID)
+			exit = true
+		// 处理分析结果
+		case result := <-worker.Wc:
+			logger.Infof("正在处理分析结果:%s", worker.RequestID)
+			logger.Infof("%+v", result)
+			for _, item := range items {
+				for _, object := range result.ResultsList {
+					if item.LinkPoint.Id == object.ObjectID {
+						for _, r := range object.Results {
+							logger.Infof("点位分析结果 %s", r.Value)
+							switch r.Value {
+							case "0":
+								item.LinkPoint.Result = 1
+							case "-1":
+								item.LinkPoint.Result = 2
+							}
+							if r.ResImageBase64 != "" {
+								pic_data, err := service.CovertBase64ToPic(r.ResImageBase64)
+								if err != nil {
+									logger.Errorf("base64图片解析错误:%s", err.Error())
+								} else {
+									logger.Info("保存识别图片")
+									service.SaveBytesToFile(pic_data, "./"+item.Point.Name+"_det.jpg")
+								}
 							}
 						}
+						logger.Infof("点位处理结果 %+v", item.LinkPoint)
 					}
-				}
 
+				}
 			}
+			exit = true
 		}
-		logger.Info("分析结果处理完成")
+		if exit {
+			logger.Infof("分析结果处理完成 %+v", request)
+			break
+		}
 	}
 
 	ctx.JSON(http.StatusOK, request)
