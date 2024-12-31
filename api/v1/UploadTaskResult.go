@@ -48,6 +48,7 @@ type UploadTaskResultRequest struct {
 func UploadTaskResult(ctx *gin.Context) {
 	defer func() {
 		if err := recover(); err != nil {
+			logger.Error(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"code": http.StatusInternalServerError,
 			})
@@ -61,6 +62,10 @@ func UploadTaskResult(ctx *gin.Context) {
 	}
 
 	// 获取文件
+	if len(form.File["files"]) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "缺少图片文件"})
+		return
+	}
 	file := form.File["files"][0]
 	dirPath := "/store/ftp/tmp/" + strings.Split(file.Filename, ".")[0]
 	filePath := dirPath + "/" + file.Filename
@@ -157,7 +162,12 @@ func UploadTaskResult(ctx *gin.Context) {
 	worker := pool.NewAnalysisWorker()
 	pool.PAnalysisRunner.Workers.Store(worker.RequestID, worker)
 	defer pool.PAnalysisRunner.Workers.Delete(worker.RequestID)
-	worker.Work(items)
+	err = worker.Work(items)
+	if err != nil {
+		logger.Info(request)
+		ctx.JSON(http.StatusOK, request)
+		return
+	}
 
 	// 等待请求结果
 	exit := false
