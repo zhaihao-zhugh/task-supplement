@@ -173,14 +173,29 @@ func UploadTaskResult(ctx *gin.Context) {
 			logger.Infof("%+v", result)
 			for _, item := range items {
 				for _, object := range result.ResultsList {
+					// 调试模拟结果
+					if item.LinkPoint.Id == "0fcd4f0ebf2a432c83c1ee8cff4ec594" {
+						item.LinkPoint.Result = 1
+						item.LinkPoint.Detail = "模型匹配失败"
+						continue
+					}
+
+					if item.LinkPoint.Id == "c50a7ee0125a11efa7bc0242ac140065" {
+						item.LinkPoint.Result = -1
+						item.LinkPoint.Detail = "渗漏油缺陷"
+						continue
+					}
+
 					if item.LinkPoint.Id == object.ObjectID {
 						for _, r := range object.Results {
 							logger.Infof("点位分析结果 %s", r.Value)
 							switch r.Value {
 							case "0":
 								item.LinkPoint.Result = 1
+								item.LinkPoint.Detail = "模型匹配失败"
 							case "-1":
-								item.LinkPoint.Result = 2
+								item.LinkPoint.Result = -1
+								item.LinkPoint.Detail = "渗漏油缺陷"
 							}
 							if r.ResImageBase64 != "" {
 								pic_data, err := service.CovertBase64ToPic(r.ResImageBase64)

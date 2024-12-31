@@ -9,7 +9,7 @@
             "analysis_type": 1,
             "analysis_list": "sly_bjbmyw",
             "config": "",
-            "file_path": "1.jpg"
+            "file_path": "/store/ftp/tmp/1.jpg"
         },
         {
             "id": 2,
@@ -20,8 +20,33 @@
             "analysis_type": 1,
             "analysis_list": "sly_bjbmyw",
             "config": "",
-            "file_path": "/store/ftp/tmp/1.jpg"
+            "file_path": ""
+
+        },
+        {
+            "id": 3,
+            "guid": "c50a7ee0125a11efa7bc0242ac140066",
+            "name": "模拟点位3",
+            "material_id": "",
+            "phase": "1,2,3",
+            "analysis_type": 1,
+            "analysis_list": "",
+            "config": "",
+            "file_path": ""
+
+        },
+        {
+            "id": 4,
+            "guid": "c50a7ee0125a11efa7bc0242ac140067",
+            "name": "模拟点位4",
+            "material_id": "",
+            "phase": "1,2,3",
+            "analysis_type": 1,
+            "analysis_list": "",
+            "config": "",
+            "file_path": ""
 
         }
+
     ]
 }

@@ -52,6 +52,7 @@ type TestPoint struct {
 	Sn       string `json:"sn"`
 	FileName string `json:"filename"`
 	Result   int    `json:"result"`
+	Detail   string `json:"detail"`
 }
 
 // AnalysisItem 向分析主机发送的待分析对象-国网规范

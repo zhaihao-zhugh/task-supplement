@@ -31,6 +31,7 @@ type GetTaskResponse struct {
 						Part      string `json:"part"`
 						Sn        string `json:"sn"`
 						ImagePath string `json:"imagePath"`
+						MaskUrl   string `json:"maskUrl"`
 					} `json:"test_point"`
 				} `json:"clearance"`
 			} `json:"sub_task"`
