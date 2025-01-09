@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"supplementary-inspection/dbdata"
+	"supplementary-inspection/basicdata"
 	"supplementary-inspection/model"
 	"supplementary-inspection/pool"
 	"supplementary-inspection/service"
@@ -122,7 +122,7 @@ func UploadTaskResult(ctx *gin.Context) {
 				if point == nil {
 					continue
 				}
-				if p := dbdata.PatrolPointMap.GetPatrolPoint(point.Id); p != nil {
+				if p := basicdata.PatrolPointMap.GetPatrolPoint(point.Id); p != nil {
 					item := model.AnalysisItem{
 						ObjectID:   point.Id,
 						ObjectName: point.Name,
