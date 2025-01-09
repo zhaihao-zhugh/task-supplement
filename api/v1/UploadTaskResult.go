@@ -164,72 +164,64 @@ func UploadTaskResult(ctx *gin.Context) {
 	defer pool.PAnalysisRunner.Workers.Delete(worker.RequestID)
 	err = worker.Work(items)
 	if err != nil {
+		request.Code = 200
 		logger.Info(request)
 		ctx.JSON(http.StatusOK, request)
 		return
 	}
 
 	// 等待请求结果
-	exit := false
-	for {
-		select {
-		// 分析过程超时
-		case <-time.After(time.Second * time.Duration(pool.AnalyzeTimeout)):
-			logger.Errorf("请求识别唯一标识为%s的图像分析过程超时", worker.RequestID)
-			exit = true
-		// 处理分析结果
-		case result := <-worker.Wc:
-			logger.Infof("正在处理分析结果:%s", worker.RequestID)
-			logger.Infof("%+v", result)
-			for _, item := range items {
-				for _, object := range result.ResultsList {
-					// 调试模拟结果
-					if item.LinkPoint.Id == "0fcd4f0ebf2a432c83c1ee8cff4ec594" {
-						item.LinkPoint.Result = 1
-						item.LinkPoint.Detail = "模型匹配失败"
-						continue
-					}
+	select {
+	// 分析过程超时
+	case <-time.After(time.Second * time.Duration(pool.AnalyzeTimeout)):
+		logger.Errorf("请求识别唯一标识为%s的图像分析过程超时", worker.RequestID)
+	// 处理分析结果
+	case result := <-worker.Wc:
+		logger.Infof("正在处理分析结果:%s", worker.RequestID)
+		logger.Infof("%+v", result)
+		for _, item := range items {
+			for _, object := range result.ResultsList {
+				// 调试模拟结果
+				if item.LinkPoint.Id == "0fcd4f0ebf2a432c83c1ee8cff4ec594" {
+					item.LinkPoint.Result = 1
+					item.LinkPoint.Detail = "模型匹配失败"
+					continue
+				}
 
-					if item.LinkPoint.Id == "c50a7ee0125a11efa7bc0242ac140065" {
-						item.LinkPoint.Result = -1
-						item.LinkPoint.Detail = "渗漏油缺陷"
-						continue
-					}
+				if item.LinkPoint.Id == "c50a7ee0125a11efa7bc0242ac140065" {
+					item.LinkPoint.Result = -1
+					item.LinkPoint.Detail = "渗漏油缺陷"
+					continue
+				}
 
-					if item.LinkPoint.Id == object.ObjectID {
-						for _, r := range object.Results {
-							logger.Infof("点位分析结果 %s", r.Value)
-							switch r.Value {
-							case "0":
-								item.LinkPoint.Result = 1
-								item.LinkPoint.Detail = "模型匹配失败"
-							case "-1":
-								item.LinkPoint.Result = -1
-								item.LinkPoint.Detail = "渗漏油缺陷"
-							}
-							if r.ResImageBase64 != "" {
-								pic_data, err := service.CovertBase64ToPic(r.ResImageBase64)
-								if err != nil {
-									logger.Errorf("base64图片解析错误:%s", err.Error())
-								} else {
-									logger.Info("保存识别图片")
-									service.SaveBytesToFile(pic_data, "./"+item.Point.Name+"_det.jpg")
-								}
+				if item.LinkPoint.Id == object.ObjectID {
+					for _, r := range object.Results {
+						logger.Infof("点位分析结果 %s", r.Value)
+						switch r.Value {
+						case "0":
+							item.LinkPoint.Result = 1
+							item.LinkPoint.Detail = "模型匹配失败"
+						case "-1":
+							item.LinkPoint.Result = -1
+							item.LinkPoint.Detail = "渗漏油缺陷"
+						}
+						if r.ResImageBase64 != "" {
+							pic_data, err := service.CovertBase64ToPic(r.ResImageBase64)
+							if err != nil {
+								logger.Errorf("base64图片解析错误:%s", err.Error())
+							} else {
+								logger.Info("保存识别图片")
+								service.SaveBytesToFile(pic_data, "./"+item.Point.Name+"_det.jpg")
 							}
 						}
-						logger.Infof("点位处理结果 %+v", item.LinkPoint)
 					}
-
+					logger.Infof("点位处理结果 %+v", item.LinkPoint)
 				}
 			}
-			exit = true
-		}
-		if exit {
-			logger.Infof("分析结果处理完成 %+v", request)
-			break
 		}
 	}
-
+	request.Code = 200
+	logger.Infof("结果上传返回结果 %+v", request)
 	ctx.JSON(http.StatusOK, request)
 }
 

@@ -9,11 +9,12 @@ import (
 	"supplementary-inspection/model"
 
 	"github.com/google/uuid"
+	"github.com/spf13/viper"
 )
 
 var AnalysisHost model.Host
 var HttpHost model.Host
-var AnalyzeTimeout int
+var AnalyzeTimeout = viper.GetInt("settings.analysis-timeout")
 
 type AnalysisWorker struct {
 	Wc        chan *model.AnalysisResult

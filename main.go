@@ -15,7 +15,7 @@ var (
 	serverPort = flag.Int("p", 8000, "server port")
 )
 
-func init() {
+func getConfig() {
 	viper.SetConfigFile(*configFile)
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -30,10 +30,10 @@ func init() {
 
 	viper.UnmarshalKey("http-host", &pool.HttpHost)
 	viper.UnmarshalKey("analysis-host", &pool.AnalysisHost)
-	pool.AnalyzeTimeout = viper.GetInt("settings.analysis-timeout")
 }
 
 func main() {
+	getConfig()
 	go pool.Run()
 	route.RunHttpServer(*serverPort)
 }

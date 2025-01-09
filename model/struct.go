@@ -47,12 +47,22 @@ type PatrolPoint struct {
 
 // 高德红外测试点位
 type TestPoint struct {
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	Sn       string `json:"sn"`
-	FileName string `json:"filename"`
-	Result   int    `json:"result"`
-	Detail   string `json:"detail"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	Sn             string `json:"sn"`
+	FileName       string `json:"filename"`
+	Result         int    `json:"result"`
+	Detail         string `json:"detail"`
+	IrPoint        []Pos  `json:"irPoint"`
+	VlPoint        []Pos  `json:"vlPoint"`
+	ResultImageUrl string `json:"resultImageUrl"`
+}
+
+type Pos struct {
+	X1 int64 `json:"x1"`
+	Y1 int64 `json:"y1"`
+	X2 int64 `json:"x2"`
+	Y2 int64 `json:"y2"`
 }
 
 // AnalysisItem 向分析主机发送的待分析对象-国网规范
