@@ -1,5 +1,5 @@
 microservices:
-  basic-data: "basic-data:8000"
+  basic-data: "https://192.168.124.40:18443/basic-data/"
 logger:
   loglevel: DEBUG
   logfile: ""

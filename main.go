@@ -4,6 +4,7 @@ import (
 	"flag"
 	"gpk/logger"
 	"log"
+	"supplementary-inspection/basicdata"
 	"supplementary-inspection/pool"
 	"supplementary-inspection/route"
 
@@ -16,6 +17,7 @@ var (
 )
 
 func getConfig() {
+	flag.Parse()
 	viper.SetConfigFile(*configFile)
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -35,5 +37,6 @@ func getConfig() {
 func main() {
 	getConfig()
 	go pool.Run()
+	go basicdata.Init()
 	route.RunHttpServer(*serverPort)
 }

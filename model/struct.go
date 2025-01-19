@@ -5,8 +5,25 @@ type Host struct {
 	Port int    `json:"port" yaml:"port"`
 }
 
+type Station struct {
+	ID           int64  `json:"id"`
+	GUID         string `json:"guid"`
+	Name         string `json:"name"`
+	StationCode  string `json:"station_code"`
+	StationType  int    `json:"station_type"`
+	Datetime     string `json:"datetime"`
+	Detail       string `json:"detail"`
+	AccessType   int    `json:"access_type"`
+	VoltageLevel string `json:"voltage_level"`
+	SignalCode   string `json:"signal_code"`
+	MapPath      string `json:"map_path"`
+	SourcePath   string `json:"source_path"`
+	Enabled      bool   `json:"enabled"`
+	Department   string `json:"department"`
+}
+
 type PatrolPoint struct {
-	ID              uint32  `json:"id"`
+	ID              int64   `json:"id"`
 	Guid            string  `json:"guid"`             // 巡视点位ID
 	Name            string  `json:"name"`             // 巡视点位名称
 	ComponentID     string  `json:"component_id"`     // 设备组件ID
@@ -41,8 +58,46 @@ type PatrolPoint struct {
 	MaxRange        float64 `json:"max_range"`        // 最大量程
 	MinValue        float64 `json:"min_value"`        // 最小刻度
 	MaxValue        float64 `json:"max_value"`        // 最大刻度
-	LabelAttri      string  `json:"label_attri"`      // 标签属性
 	LatestValue     string  `json:"latest_value"`     // 最新结果值
+}
+
+type Task struct {
+	ID                  int64       `json:"id"`
+	GUID                string      `json:"guid"`
+	Name                string      `json:"name"`
+	Approved            int         `json:"approved"`
+	Approver            string      `json:"approver"`
+	ApprovalTime        string      `json:"approval_time"`
+	ApprovalComments    string      `json:"approval_comments"`
+	Enabled             bool        `json:"enabled"`
+	Source              int         `json:"source"`
+	CreateTime          string      `json:"create_time"`
+	Creator             string      `json:"creator"`
+	TaskType            int         `json:"task_type"`
+	FixedStartTime      string      `json:"fixed_start_time"`
+	CycleStartTime      interface{} `json:"cycle_start_time"`
+	CycleEndTime        interface{} `json:"cycle_end_time"`
+	CycleExecuteTime    interface{} `json:"cycle_execute_time"`
+	CycleMonth          string      `json:"cycle_month"`
+	CycleWeek           string      `json:"cycle_week"`
+	IntervalStartTime   interface{} `json:"interval_start_time"`
+	IntervalEndTime     interface{} `json:"interval_end_time"`
+	IntervalExecuteTime interface{} `json:"interval_execute_time"`
+	IntervalNumber      int         `json:"interval_number"`
+	IntervalType        int         `json:"interval_type"`
+	InvalidStartTime    interface{} `json:"invalid_start_time"`
+	InvalidEndTime      interface{} `json:"invalid_end_time"`
+	PatrolType          int         `json:"patrol_type"`
+	Priority            int         `json:"priority"`
+	DeviceLevel         int         `json:"device_level"`
+	DeviceList          string      `json:"device_list"`
+	DeviceTypes         string      `json:"device_types"`
+	RecognitionTypes    string      `json:"recognition_types"`
+	MeterTypes          string      `json:"meter_types"`
+	AppearanceTypes     string      `json:"appearance_types"`
+	Favorite            bool        `json:"favorite"`
+	Status              int         `json:"status"`
+	Station             Station     `json:"station"`
 }
 
 // 高德红外测试点位
