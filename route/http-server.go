@@ -15,6 +15,7 @@ func Router() *gin.Engine {
 		BaseRouter.POST("GetTaskContent", api.GetTaskContent)
 		BaseRouter.POST("UploadTaskResult", api.UploadTaskResult)
 		BaseRouter.POST("picAnalyseRetNotify", api.PicAnalyseRetNotify)
+		// BaseRouter.POST("saveModel", api.SaveModel)
 	}
 	return router
 }

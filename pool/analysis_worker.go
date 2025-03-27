@@ -9,27 +9,28 @@ import (
 	"supplementary-inspection/model"
 
 	"github.com/google/uuid"
-	"github.com/spf13/viper"
 )
 
 var AnalysisHost model.Host
 var HttpHost model.Host
-var AnalyzeTimeout = viper.GetInt("settings.analysis-timeout")
+var AnalyzeTimeout int
 
 type AnalysisWorker struct {
+	ErrorChan chan error
 	Wc        chan *model.AnalysisResult
 	RequestID string // 请求ID
 }
 
 func NewAnalysisWorker() *AnalysisWorker {
 	return &AnalysisWorker{
+		ErrorChan: make(chan error),
 		Wc:        make(chan *model.AnalysisResult),
 		RequestID: uuid.New().String(),
 	}
 }
 
 // Work 发送分析请求
-func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
+func (worker *AnalysisWorker) Work(items []model.AnalysisItem) {
 	logger.Infof("开始等待分析主机返回分析结果,超过%d秒后算超时", AnalyzeTimeout)
 
 	// res := make(chan error)
@@ -88,13 +89,13 @@ func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
 		ObjectList:      items,
 	}
 
-	// buf, err := h.Post(fmt.Sprintf("https://%s:%d/picAnalyse",
-	// 	AnalysisHost.IP,
-	// 	AnalysisHost.Port,
-	// ), &request)
+	buf, err := h.Post(fmt.Sprintf("http://%s:%d/picAnalyse",
+		AnalysisHost.IP,
+		AnalysisHost.Port,
+	), &request)
 
 	// 网络代理
-	buf, err := h.Post("https://221.226.190.26:18443/detect/picAnalyse", &request)
+	// buf, err := h.Post("https://221.226.190.26:18443/detect/picAnalyse", &request)
 
 	if err != nil {
 		for _, item := range items {
@@ -102,7 +103,7 @@ func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
 			logger.Errorf("###请求发送错误:%s", item.Point.Name)
 		}
 		logger.Errorf("请求识别唯一标识为%s的图像分析请求发送错误%s", worker.RequestID, err.Error())
-		return err
+		worker.ErrorChan <- err
 	} else {
 		logger.Infof("请求识别唯一标识为%s的图像分析请求发送成功%v", worker.RequestID, buf)
 	}
@@ -117,8 +118,6 @@ func (worker *AnalysisWorker) Work(items []model.AnalysisItem) error {
 			logger.Errorf("###分析返回错误:%s", item.Point.Name)
 		}
 		logger.Errorf("请求识别唯一标识为%s的图像分析请求返回错误", worker.RequestID)
-		return fmt.Errorf("图像分析错误")
+		worker.ErrorChan <- fmt.Errorf("图像分析错误")
 	}
-
-	return nil
 }

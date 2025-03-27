@@ -1,9 +1,10 @@
 go 1.23.0
 
-toolchain go1.23.4
+// toolchain go1.23.4
 
 use (
-	../gpk/http
-	../gpk/logger
+	../../gpk/http
+	../../gpk/logger
+	../../gpk/rabbitmq
 	./
 )

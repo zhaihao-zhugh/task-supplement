@@ -37,8 +37,17 @@ func (t *TaskProvider) GetTaskMap() map[string]*model.Task {
 	return t.TaskMap
 }
 
+func (t *TaskProvider) Clean() {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	for k := range t.TaskMap {
+		delete(t.TaskMap, k)
+	}
+}
+
 func (t *TaskProvider) GetData() {
-	url := baseUrl + "task?limit=9999"
+	t.Clean()
+	url := BaseUrl + "task?enabled=true&limit=9999"
 	for {
 		if res, err := GetData(url, nil); err != nil {
 			logger.Error(err)

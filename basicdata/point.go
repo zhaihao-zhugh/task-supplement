@@ -37,6 +37,14 @@ func (p *PointProvider) GetPatrolPointMap() map[string]*model.PatrolPoint {
 	return p.PatrolPointMap
 }
 
+func (p *PointProvider) Clean() {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for k := range p.PatrolPointMap {
+		delete(p.PatrolPointMap, k)
+	}
+}
+
 func (p *PointProvider) GetData() {
 	// file, err := os.ReadFile("./point.json")
 	// if err != nil {
@@ -48,7 +56,8 @@ func (p *PointProvider) GetData() {
 	// 	json.Unmarshal([]byte(v.String()), &point)
 	// 	p.SetPatrolPoint(point.Guid, &point)
 	// }
-	url := baseUrl + "patrolpoint?limit=9999"
+	p.Clean()
+	url := BaseUrl + "patrolpoint?limit=9999"
 	for {
 		if res, err := GetData(url, nil); err != nil {
 			logger.Error(err)

@@ -1,13 +1,19 @@
 microservices:
-  basic-data: "https://192.168.124.40:18443/basic-data/"
+  basic-data: "http://172.20.0.101:8000/common/"
 logger:
   loglevel: DEBUG
   logfile: ""
 analysis-host:
-  ip: 192.168.1.150
+  ip: 192.168.124.40
   port: 20022
 http-host:
-  ip: IP_ADDRESS
-  port: 8080
+  ip: 192.168.124.40
+  port: 8000
 settings:
-  analysis-timeout: 60
+  analysis-timeout: 5
+mq:
+  host: 172.20.0.16
+  port: 5672
+  username: admin
+  password: qwer1234
+  durable: false

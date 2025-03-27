@@ -4,22 +4,22 @@
   "data": {
     "main_task": [
       {
-        "id": "1ff51db771164a64b244832d22d461ed",
+        "id": "1ff51db76432d22d461ed",
         "type": "红外检测",
         "name": "测试任务",
         "sub_task": [
           {
-            "id": "810f5c0a867011ed8a6b0242ac140065",
+            "id": "810f5c0a86242ac140065",
             "type": "红外检测",
             "name": "测试回填任务",
             "clearance": [
               {
-                "id": "c787c6207daa4456901d425b62ecf83b",
+                "id": "c787c6207d425b62ecf83b",
                 "name": "测试间隔",
                 "sn": "1",
                 "test_point": [
                   {
-                    "id": "0fcd4f0ebf2a432c83c1ee8cff4ec594",
+                    "id": "0fcd4f4ec594",
                     "name": "缺陷识别点位1",
                     "part": "本体",
                     "sn": "1",
@@ -27,7 +27,7 @@
                     "maskUrl": "/store/ftp/tmp/1-mask.jpg"
                   },
                   {
-                    "id": "c50a7ee0125a11efa7bc0242ac140065",
+                    "id": "c50a7ee2ac140065",
                     "name": "缺陷识别点位2",
                     "part": "本体",
                     "sn": "2",
@@ -35,7 +35,7 @@
                     "maskUrl": "/store/ftp/tmp/1-mask.jpg"
                   },
                   {
-                    "id": "c50a7ee0125a11efa7bc0242ac140066",
+                    "id": "c50a7ee01242ac140066",
                     "name": "缺陷识别点位3",
                     "part": "本体",
                     "sn": "3",
@@ -43,7 +43,7 @@
                     "maskUrl": "/store/ftp/tmp/1-mask.jpg"
                   },
                   {
-                    "id": "c50a7ee0125a11efa7bc0242ac140067",
+                    "id": "c50a7ee0142ac140067",
                     "name": "缺陷识别点位4",
                     "part": "本体",
                     "sn": "4",
@@ -52,7 +52,7 @@
                   },
                   {
                     "appearance_type": 1,
-                    "area_id": "51df7dea3e7267910632e57760a60c58",
+                    "area_id": "51df7dea3e7a60c58",
                     "area_name": "富腾Ⅰ线",
                     "bay_id": "BFUTENG1",
                     "bay_name": "富腾Ⅰ线",

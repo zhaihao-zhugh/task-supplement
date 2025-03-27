@@ -3,14 +3,18 @@ package api
 import (
 	"archive/zip"
 	"encoding/json"
+	"fmt"
 	"gpk/logger"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"supplementary-inspection/basicdata"
 	"supplementary-inspection/model"
+	"supplementary-inspection/mq"
 	"supplementary-inspection/pool"
 	"supplementary-inspection/service"
 	"time"
@@ -61,22 +65,28 @@ func UploadTaskResult(ctx *gin.Context) {
 		return
 	}
 
+	logger.Infof("接收到任务结果上报:%+v\n", form.Value["data"][0])
+
 	// 获取文件
 	if len(form.File["files"]) == 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "缺少图片文件"})
 		return
 	}
 	file := form.File["files"][0]
+	logger.Infof("接收到上传文件: %s , size: %d ", file.Filename, file.Size)
 	dirPath := "/store/ftp/tmp/" + strings.Split(file.Filename, ".")[0]
 	filePath := dirPath + "/" + file.Filename
-	err = ctx.SaveUploadedFile(file, filePath)
+	// logger.Info(filePath)
+	err = SaveUploadedFile(file, filePath)
 	if err != nil {
+		logger.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	zr, err := zip.OpenReader(filePath)
 	if err != nil {
+		logger.Error(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -86,6 +96,7 @@ func UploadTaskResult(ctx *gin.Context) {
 		// 直接读文件的内容
 		reader, err := f.Open()
 		if err != nil {
+			logger.Error(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -96,6 +107,7 @@ func UploadTaskResult(ctx *gin.Context) {
 		// 保存文件
 		err = SaveFile(reader, dirPath+"/"+f.Name)
 		if err != nil {
+			logger.Error(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -103,7 +115,7 @@ func UploadTaskResult(ctx *gin.Context) {
 
 	// 获取结果数据
 	data := form.Value["data"][0]
-	logger.Infof("接收到任务结果上报:%+v\n", data)
+	// logger.Infof("接收到任务结果上报:%+v\n", data)
 	var request UploadTaskResultRequest
 	err = json.Unmarshal([]byte(data), &request)
 	if err != nil {
@@ -115,6 +127,7 @@ func UploadTaskResult(ctx *gin.Context) {
 		return
 	}
 
+	var msg_data []interface{}
 	var items []model.AnalysisItem
 	for _, subTask := range request.Data.MainTask.SubTask {
 		for _, clearance := range subTask.Clearance {
@@ -129,11 +142,31 @@ func UploadTaskResult(ctx *gin.Context) {
 						Point:      p,
 						LinkPoint:  point,
 					}
+
+					data := mq.TASKITEM{
+						TaskName:        request.Data.MainTask.Name,
+						TaskCode:        request.Data.MainTask.Id,
+						PatrolPointName: p.Name,
+						PatrolPointID:   p.Guid,
+						ComponentID:     p.Component.Guid,
+						ComponentName:   p.Component.Name,
+						BayID:           p.Bay.Guid,
+						BayName:         p.Bay.Name,
+						AreaID:          p.Area.Guid,
+						AreaName:        p.Area.Name,
+					}
+
+					if t := basicdata.TaskMap.GetTask(request.Data.MainTask.Id); t != nil {
+						data.StationID = t.Station.GUID
+						data.StationName = t.Station.Name
+					}
 					if p.AnalysisList != "" {
 						item.TypeList = strings.Split(p.AnalysisList, ",")
+					} else {
+						item.TypeList = []string{"ziwai_sly"}
 					}
-					if p.FilePath != "" {
-						if file, err := os.ReadFile(p.FilePath); err == nil {
+					if p.ImageUrl != "" {
+						if file, err := os.ReadFile(p.ImageUrl); err == nil {
 							item.TemplateFrame = service.CovertPicToBase64(file)
 						} else {
 							logger.Error(err)
@@ -147,6 +180,9 @@ func UploadTaskResult(ctx *gin.Context) {
 								item.TemplateFrame = item.RealFrame
 							}
 							dat.MakeFile(dirPath, point.Name)
+							data.FileType = "2"
+							data.FilePath = url.QueryEscape(fmt.Sprintf("%s/%s_pic.jpg", dirPath, point.Name))
+							data.PicAnalyzed = url.QueryEscape(fmt.Sprintf("%s/%s_pic.jpg", dirPath, point.Name))
 							// err := WriteStringToFile(item.RealFrame, dirPath+"/"+point.Name+"_base64.txt")
 							// if err != nil {
 							// 	logger.Error(err)
@@ -154,6 +190,7 @@ func UploadTaskResult(ctx *gin.Context) {
 						}
 					}
 					items = append(items, item)
+					msg_data = append(msg_data, data)
 				}
 			}
 		}
@@ -162,14 +199,7 @@ func UploadTaskResult(ctx *gin.Context) {
 	worker := pool.NewAnalysisWorker()
 	pool.PAnalysisRunner.Workers.Store(worker.RequestID, worker)
 	defer pool.PAnalysisRunner.Workers.Delete(worker.RequestID)
-	err = worker.Work(items)
-	if err != nil {
-		request.Code = 200
-		logger.Info(request)
-		ctx.JSON(http.StatusOK, request)
-		return
-	}
-
+	go worker.Work(items)
 	// 等待请求结果
 	select {
 	// 分析过程超时
@@ -178,33 +208,26 @@ func UploadTaskResult(ctx *gin.Context) {
 	// 处理分析结果
 	case result := <-worker.Wc:
 		logger.Infof("正在处理分析结果:%s", worker.RequestID)
-		logger.Infof("%+v", result)
+		// logger.Infof("%+v", result)
 		for _, item := range items {
 			for _, object := range result.ResultsList {
-				// 调试模拟结果
-				if item.LinkPoint.Id == "0fcd4f0ebf2a432c83c1ee8cff4ec594" {
-					item.LinkPoint.Result = 1
-					item.LinkPoint.Detail = "模型匹配失败"
-					continue
-				}
-
-				if item.LinkPoint.Id == "c50a7ee0125a11efa7bc0242ac140065" {
-					item.LinkPoint.Result = -1
-					item.LinkPoint.Detail = "渗漏油缺陷"
-					continue
-				}
 
 				if item.LinkPoint.Id == object.ObjectID {
 					for _, r := range object.Results {
 						logger.Infof("点位分析结果 %s", r.Value)
-						switch r.Value {
-						case "0":
-							item.LinkPoint.Result = 1
-							item.LinkPoint.Detail = "模型匹配失败"
-						case "-1":
-							item.LinkPoint.Result = -1
-							item.LinkPoint.Detail = "渗漏油缺陷"
-						}
+						// switch r.Value {
+						// case "0":
+						// 	item.LinkPoint.Result = 0
+						// 	item.LinkPoint.Detail = "匹配失败"
+						// case "1":
+						// 	item.LinkPoint.Result = 1
+						// 	item.LinkPoint.Detail = "匹配成功"
+						// case "-1":
+						// 	item.LinkPoint.Result = -1
+						// 	item.LinkPoint.Detail = "渗漏油"
+						// }
+						item.LinkPoint.Result = -1
+						item.LinkPoint.Detail = "渗漏油"
 						if r.ResImageBase64 != "" {
 							pic_data, err := service.CovertBase64ToPic(r.ResImageBase64)
 							if err != nil {
@@ -220,13 +243,15 @@ func UploadTaskResult(ctx *gin.Context) {
 			}
 		}
 	}
+
+	mq.PublishMsg("task.result.final", msg_data)
 	request.Code = 200
 	logger.Infof("结果上传返回结果 %+v", request)
 	ctx.JSON(http.StatusOK, request)
 }
 
 func SaveFile(file File, dst string) error {
-	if err := os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0777); err != nil {
 		return err
 	}
 
@@ -251,4 +276,25 @@ func WriteStringToFile(str_data string, dst string) error {
 		return err
 	}
 	return nil
+}
+
+func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	if err = os.MkdirAll(filepath.Dir(dst), 0777); err != nil {
+		return err
+	}
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, src)
+	return err
 }
